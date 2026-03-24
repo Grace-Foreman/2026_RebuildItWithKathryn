@@ -34,6 +34,8 @@ import frc.robot.subsystems.SMARTShoot;
 import frc.robot.subsystems.Shoot;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.Telemetry;
+import frc.robot.subsystems.KrakenPositionSubsystem;
+import frc.robot.commands.SetPositionCommand;
 
 
 /**
@@ -75,7 +77,9 @@ public class RobotContainer {
     private final VisionSubsystem visionSubsystem    = new VisionSubsystem(drivetrain);
     private final SMARTShoot           shootSubsystem     = new SMARTShoot();
     private final Intake intake;
-     private final Shoot shoot;
+    private final Shoot shoot;
+    private final KrakenPositionSubsystem krakenSubsystem;
+
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -104,16 +108,21 @@ public class RobotContainer {
 
     private final Telemetry telemetry = new Telemetry(kMaxSpeed);
 
+    private static final double HOME_POSITION = 0.0;
+    private static final double POSITION_1 = -0.5;
+    private static final double POSITION_2 = -2.8;
+    private static final double POSITION_3 = -2.0;
+
     // ─────────────────────────────────────────────────────────────────────────
     // Constructor
     // ─────────────────────────────────────────────────────────────────────────
     public RobotContainer() {
+        krakenSubsystem = new KrakenPositionSubsystem(17);
         intake = new Intake(14);
         shoot = new Shoot(/* topMotorCanId= */ 16, /* bottomMotorCanId= */ 15); //FIX THIS IS FOR 2-MOTOR SHOOT; WE HAVE 1a
         configureBindings();
         putDashboard();
          
-        m_chooser.addOption("Shoot Command");
 
         SmartDashboard.putData("Auto Chooser", m_chooser);
 
@@ -170,7 +179,7 @@ public class RobotContainer {
         // Operator LT → align to tower (drive to tower + hold side-specific heading)
         // Automatically detects left/right side of tower.
         // Rejects if robot is >2m away (tunable in VisionConstants.kMaxTowerAlignDistance).
-        operator.leftTrigger().whileTrue(
+        driver.rightBumper().whileTrue(
             new AlignToTowerCommand(drivetrain, visionSubsystem)
         );
 
@@ -181,9 +190,11 @@ public class RobotContainer {
                                                                                                                                                                                                                                                                                                                                                              
         operator.a().whileTrue(new ShootCommand(shoot));
        
-
         operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,4)  );
         operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
+
+        operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
+        operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
         // Operator A → climb level 3 (one-button sequence)
         // TODO: Replace this placeholder with your climb sequence commandc
 
@@ -218,6 +229,7 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
        // return m_chooser.getSelected();
        // TODO: Add autonomous routines using PathPlanner or command sequences
-        return Commands.none();
+       // return Commands.none();
+         return m_chooser.getSelected();
     }
 }
