@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -24,12 +25,16 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
+import frc.robot.commands.SMARTShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.SMARTShoot;
 import frc.robot.subsystems.Shoot;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.Telemetry;
+
 
 /**
  * RobotContainer for Team 6875 — 2026 season.
@@ -68,13 +73,19 @@ public class RobotContainer {
     // ─────────────────────────────────────────────────────────────────────────
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final VisionSubsystem visionSubsystem    = new VisionSubsystem(drivetrain);
-    private final Shoot           shootSubsystem     = new Shoot();
+    private final SMARTShoot           shootSubsystem     = new SMARTShoot();
+    private final Intake intake;
+     private final Shoot shoot;
+
 
     // ─────────────────────────────────────────────────────────────────────────
     // Controllers
     // ─────────────────────────────────────────────────────────────────────────
     private final CommandXboxController driver   = new CommandXboxController(0);
     private final CommandXboxController operator = new CommandXboxController(1);
+
+      // A chooser for autonomous commands
+    SendableChooser<Command> m_chooser = new SendableChooser<>();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Swerve drive settings (from CTRE Tuner X generated template)
@@ -97,8 +108,15 @@ public class RobotContainer {
     // Constructor
     // ─────────────────────────────────────────────────────────────────────────
     public RobotContainer() {
+        intake = new Intake(14);
+        shoot = new Shoot(/* topMotorCanId= */ 16, /* bottomMotorCanId= */ 15); //FIX THIS IS FOR 2-MOTOR SHOOT; WE HAVE 1a
         configureBindings();
         putDashboard();
+         
+        m_chooser.addOption("Shoot Command");
+
+        SmartDashboard.putData("Auto Chooser", m_chooser);
+
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -110,9 +128,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
                 drive
-                    .withVelocityX(-driver.getLeftY() * kMaxSpeed)
-                    .withVelocityY(-driver.getLeftX() * kMaxSpeed)
-                    .withRotationalRate(-driver.getRightX() * kMaxAngularRate)
+                    .withVelocityX(-driver.getLeftY() *-driver.getLeftY() *driver.getLeftY() * kMaxSpeed)
+                    .withVelocityY(-driver.getLeftX() *-driver.getLeftX() *driver.getLeftX() * kMaxSpeed)
+                    .withRotationalRate(-driver.getRightX() *-driver.getRightX() *driver.getRightX() * kMaxAngularRate)
             )
         );
 
@@ -145,8 +163,8 @@ public class RobotContainer {
 
         // Operator LB → align to goal (rotate robot + pre-spin flywheel)
         // NOTE: Move to driver.leftBumper() if drivers prefer to control this
-        operator.leftBumper().whileTrue(
-            new AlignToGoalCommand(drivetrain, visionSubsystem, shootSubsystem)
+        driver.leftBumper().whileTrue(
+            new AlignToGoalCommand(drivetrain, visionSubsystem/* , shootSubsystem*/)
         );
 
         // Operator LT → align to tower (drive to tower + hold side-specific heading)
@@ -157,26 +175,17 @@ public class RobotContainer {
         );
 
         // Operator RB → fire shooter (flywheel + feeder once up to speed)
-        operator.rightBumper().whileTrue(
-            new ShootCommand(shootSubsystem)
+        operator.b().whileTrue(
+            new SMARTShootCommand(visionSubsystem, shootSubsystem, drivetrain)
         );
+                                                                                                                                                                                                                                                                                                                                                             
+        operator.a().whileTrue(new ShootCommand(shoot));
+       
 
-        // Operator Y → intake
-        // TODO: Replace this placeholder with your real IntakeCommand
-        operator.y().whileTrue(
-            new InstantCommand(() -> {
-                // TODO: new IntakeCommand(intakeSubsystem)
-            }).withName("IntakePlaceholder")
-        );
-
+        operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,4)  );
+        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
         // Operator A → climb level 3 (one-button sequence)
-        // TODO: Replace this placeholder with your climb sequence command
-        // e.g.: operator.a().onTrue(new ClimbLevel3Command(climbSubsystem));
-        operator.a().onTrue(
-            new InstantCommand(() -> {
-                // TODO: Wire to climb command when code is ready
-            }).withName("ClimbL3Placeholder")
-        );
+        // TODO: Replace this placeholder with your climb sequence commandc
 
         // Drivetrain telemetry registration
         drivetrain.registerTelemetry(telemetry::telemeterize);
@@ -207,7 +216,8 @@ public class RobotContainer {
     // Auto
     // ─────────────────────────────────────────────────────────────────────────
     public Command getAutonomousCommand() {
-        // TODO: Add autonomous routines using PathPlanner or command sequences
+       // return m_chooser.getSelected();
+       // TODO: Add autonomous routines using PathPlanner or command sequences
         return Commands.none();
     }
 }

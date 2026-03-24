@@ -15,9 +15,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Shoot;
+import frc.robot.subsystems.SMARTShoot;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.Shoot.ShootConstants;
+import frc.robot.subsystems.SMARTShoot.ShootConstants;
 
 /**
  * AlignToGoalCommand — rotates the robot to face the goal and pre-spins
@@ -39,23 +39,24 @@ public class AlignToGoalCommand extends Command {
 
     // ── Tunable constants ─────────────────────────────────────────────────────
     // Rotation PID — tune kP first, then add kD if oscillating
-    private static final double kRotP = 1.7;   // Matches 3940's kAimP
+    private static final double kRotP = 0.5;  //0.8 // Matches 3940's kAimP
     private static final double kRotI = 0.0;
-    private static final double kRotD = 0.0;
+    private static final double kRotD = 0.1;
     // Max angular velocity and acceleration for the profile
-    private static final double kMaxAngVel  = 3.0 * Math.PI; // rad/s
-    private static final double kMaxAngAccel = 2.0 * Math.PI; // rad/s²
+    private static final double kMaxAngVel  = 1.0 * Math.PI; // rad/s
+    private static final double kMaxAngAccel = 1.0 * Math.PI; // rad/s²
 
     // Rotation tolerance — how close is "aligned" (radians)
-    private static final double kRotTolerance = Math.PI / 180.0; // 1 degree
+    private static final double kRotTolerance = Math.toRadians(1);
+    private static final double kShooterOffset = Math.toRadians(-4);
 
     // Flywheel "up to speed" tolerance (RPS)
-    private static final double kSpeedTolerance = 2.0;
+    //private static final double kSpeedTolerance = 1.0;
     // ─────────────────────────────────────────────────────────────────────────
 
     private final CommandSwerveDrivetrain drivetrain;
     private final VisionSubsystem         visionSubsystem;
-    private final Shoot                   shootSubsystem; // NOT in addRequirements — ShootCommand overrides
+    //private final Shoot                   shootSubsystem; // NOT in addRequirements — ShootCommand overrides
 
     private final ProfiledPIDController rotationController = new ProfiledPIDController(
         kRotP, kRotI, kRotD,
@@ -67,11 +68,11 @@ public class AlignToGoalCommand extends Command {
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
     public AlignToGoalCommand(CommandSwerveDrivetrain drivetrain,
-                               VisionSubsystem visionSubsystem,
-                               Shoot shootSubsystem) {
+                               VisionSubsystem visionSubsystem
+                               /*, Shoot shootSubsystem*/) {
         this.drivetrain      = drivetrain;
         this.visionSubsystem = visionSubsystem;
-        this.shootSubsystem  = shootSubsystem;
+        //this.shootSubsystem  = shootSubsystem;
 
         // Only require the drivetrain — Shoot is NOT required here so that
         // ShootCommand (RB) can take over the subsystem without interrupting
@@ -79,7 +80,7 @@ public class AlignToGoalCommand extends Command {
         addRequirements(drivetrain);
 
         // Wrap rotation error across 0 to 2π — prevents spinning the wrong way
-        rotationController.enableContinuousInput(0.0, 2.0 * Math.PI);
+        rotationController.enableContinuousInput(-Math.PI, Math.PI);
         rotationController.setTolerance(kRotTolerance);
     }
 
@@ -105,15 +106,24 @@ public class AlignToGoalCommand extends Command {
         double dy = goalPose.getY() - robotPose.getY();
         double targetAngle = Math.atan2(dy, dx);
 
+        targetAngle += kShooterOffset;
         // Normalize to [0, 2π] to match continuous input range
         if (targetAngle < 0) targetAngle += 2.0 * Math.PI;
 
         // ── 3. PID: calculate rotation output ─────────────────────────────────
         rotationController.setGoal(targetAngle);
         double currentAngle = robotPose.getRotation().getRadians();
-        if (currentAngle < 0) currentAngle += 2.0 * Math.PI;
 
-        double rotOutput = rotationController.calculate(currentAngle);
+        double angleError = targetAngle - currentAngle;
+        
+        if (angleError > Math.PI){angleError -= 2.0*Math.PI;}
+        if (angleError < -Math.PI){angleError += 2.0*Math.PI;}
+
+        boolean inTolerance = Math.abs(angleError) <= kRotTolerance;
+        //if (currentAngle < 0) currentAngle += 2.0 * Math.PI;
+
+        double rotOutput = inTolerance
+        ? 0.0 : rotationController.calculate(currentAngle);
 
         // ── 4. Apply drive command — robot stays in place, only rotates ───────
         drivetrain.setControl(
@@ -122,30 +132,33 @@ public class AlignToGoalCommand extends Command {
                 .withVelocityY(0.0)
                 .withRotationalRate(rotOutput)
         );
-
+    SmartDashboard.putString("AlignGoal/Status", 
+            inTolerance ? "Aligned" : "Rotating");
+    }
+/* 
         // ── 5. Physics-based flywheel speed ───────────────────────────────────
         double distanceMeters = Math.sqrt(dx * dx + dy * dy);
         boolean inRange = distanceMeters >= ShootConstants.kMinRangeMeters
                        && distanceMeters <= ShootConstants.kMaxRangeMeters;
 
-        boolean shootCommandActive = edu.wpi.first.wpilibj2.command.CommandScheduler
-            .getInstance()
-            .requiring(shootSubsystem) != null;
+        //boolean shootCommandActive = edu.wpi.first.wpilibj2.command.CommandScheduler
+            //.getInstance()
+            //.requiring(shootSubsystem) != null;
 
-        if (!shootCommandActive){
+        //if (!shootCommandActive){
             if (inRange) {
-                double targetRPS = shootSubsystem.calculateMotorRPS(distanceMeters);
-                shootSubsystem.setFlywheelRPS(targetRPS);
+                //double targetRPS = shootSubsystem.calculateMotorRPS(distanceMeters);
+                //shootSubsystem.setFlywheelRPS(targetRPS);
 
                 // ── 6. Elastic / SmartDashboard status ───────────────────────────
                 boolean aligned  = rotationController.atGoal();
-                boolean atSpeed  = shootSubsystem.isUpToSpeed(targetRPS, kSpeedTolerance);
+                //boolean atSpeed  = shootSubsystem.isUpToSpeed(targetRPS, kSpeedTolerance);
 
-                SmartDashboard.putNumber("AlignGoal/TargetRPS",     targetRPS);
-                SmartDashboard.putNumber("AlignGoal/CurrentRPS",    shootSubsystem.getFlywheelRPS());
+                //SmartDashboard.putNumber("AlignGoal/TargetRPS",     targetRPS);
+                //SmartDashboard.putNumber("AlignGoal/CurrentRPS",    shootSubsystem.getFlywheelRPS());
                 SmartDashboard.putNumber("AlignGoal/DistanceM",     distanceMeters);
                 SmartDashboard.putBoolean("AlignGoal/Aligned",      aligned);
-                SmartDashboard.putBoolean("AlignGoal/AtSpeed",      atSpeed);
+                //SmartDashboard.putBoolean("AlignGoal/AtSpeed",      atSpeed);
 
                 if (aligned && atSpeed) {
                     SmartDashboard.putString("AlignGoal/Status", "READY TO FIRE!");
@@ -168,16 +181,17 @@ public class AlignToGoalCommand extends Command {
             rotationController.atGoal() ? "Aligned (Shooting...)" : "Rotating...");
         }
     }
-
+*/
     @Override
     public void end(boolean interrupted) {
+     
         // Stop drivetrain rotation
         drivetrain.setControl(
             driveRequest.withVelocityX(0).withVelocityY(0).withRotationalRate(0)
         );
         // Let flywheel coast — ShootCommand will take over if RB is still held
-        shootSubsystem.coastTopShoot();
-        SmartDashboard.putString("AlignGoal/Status", "—");
+        //shootSubsystem.coastTopShoot();
+        
     }
 
     @Override

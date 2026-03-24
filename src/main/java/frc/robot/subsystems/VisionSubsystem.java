@@ -69,11 +69,11 @@ public class VisionSubsystem extends SubsystemBase {
         // Yaw = 0° means camera faces straight forward
         public static final Transform3d kRobotToCamera = new Transform3d(
             new Translation3d(
-                Units.inchesToMeters(8.0),    // 8" forward of center
-                Units.inchesToMeters(8.75),   // 8.75" left of center
-                Units.inchesToMeters(19.0)    // 19" above floor
+                Units.inchesToMeters(10.75),    // 8" forward of center
+                Units.inchesToMeters(9.4375),   // 8.75" left of center
+                Units.inchesToMeters(20.25)    // 19" above floor
             ),
-            new Rotation3d(0.0, 0.0, 0.0)    // Camera faces straight forward
+            new Rotation3d(0.0, 10.0, 0.0)    // Camera faces straight forward
         );
 
         // How much to trust vision measurements when updating pose estimator
@@ -254,8 +254,10 @@ public class VisionSubsystem extends SubsystemBase {
      *
      * @param targets  List of Pose2d for this alliance's tag group
      * @param tagIDs   Parallel array of tag IDs corresponding to targets
+     * @param useFrontFacing
      */
-    private Pose2d selectClosestTarget(List<Pose2d> targets, int[] tagIDs) {
+    
+     private Pose2d selectClosestTarget(List<Pose2d> targets, int[] tagIDs, boolean useFrontFacing) {
         if (targets.isEmpty()) {
             currentTarget.tagID = 0;
             currentTarget.pose  = new Pose2d();
@@ -263,12 +265,13 @@ public class VisionSubsystem extends SubsystemBase {
         }
 
         // "Rear" = direction the robot's back is pointing
-        double robotRearAngle = drivetrain.getState().Pose.getRotation().getRadians() - Math.PI;
+        double robotAngle = drivetrain.getState().Pose.getRotation().getRadians();
+        double referenceAngle = useFrontFacing ? robotAngle : robotAngle - Math.PI;
 
         // First pass: find a tag whose normal is within kAngTolerance of robot rear
         for (int i = 0; i < targets.size(); i++) {
             double tagAngle = targets.get(i).getRotation().getRadians();
-            if (Math.cos(tagAngle - robotRearAngle) > Math.cos(VisionConstants.kAngTolerance)) {
+            if (Math.cos(tagAngle - referenceAngle) > Math.cos(VisionConstants.kAngTolerance)) {
                 currentTarget.tagID = tagIDs[i];
                 currentTarget.pose  = targets.get(i);
                 return currentTarget.pose;
@@ -297,8 +300,8 @@ public class VisionSubsystem extends SubsystemBase {
      */
     public Pose2d getClosestTowerTarget(boolean isBlue) {
         return isBlue
-            ? selectClosestTarget(blueTowerTargets, blueTowerTagIDs)
-            : selectClosestTarget(redTowerTargets,  redTowerTagIDs);
+            ? selectClosestTarget(blueTowerTargets, blueTowerTagIDs, false)
+            : selectClosestTarget(redTowerTargets,  redTowerTagIDs, false);
     }
 
     /**
@@ -307,8 +310,8 @@ public class VisionSubsystem extends SubsystemBase {
      */
     public Pose2d getClosestGoalTarget(boolean isBlue) {
         return isBlue
-            ? selectClosestTarget(blueGoalTargets, blueGoalTagIDs)
-            : selectClosestTarget(redGoalTargets,  redGoalTagIDs);
+            ? selectClosestTarget(blueGoalTargets, blueGoalTagIDs,true)
+            : selectClosestTarget(redGoalTargets,  redGoalTagIDs,true);
     }
 
     /**

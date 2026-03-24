@@ -22,7 +22,7 @@ public class Intake extends SubsystemBase {
     private static final double kV = 1.69;   // Velocity feedforward 1.69
     
     // Motion constraints
-    private static final double MAX_VELOCITY = 2.0;      // rotations per second
+    private static final double MAX_VELOCITY = 4.0;      // rotations per second
     private static final double MAX_ACCELERATION = 20.0; // rotations per second^2
     private static final double MAX_JERK = 200.0;        // rotations per second^3
     
