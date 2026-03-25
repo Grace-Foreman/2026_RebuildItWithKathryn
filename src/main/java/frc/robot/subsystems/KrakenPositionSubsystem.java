@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -10,8 +11,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class KrakenPositionSubsystem extends SubsystemBase {
     private final TalonFX krakenMotor;
-    private final PositionVoltage positionControl;
-    
+    private final MotionMagicVoltage motionMagicControl;
+
     // PID Constants - tune these for your mechanism
     private static final double kP = 6.0;  // Proportional gain
     private static final double kI = 0.0;   // Integral gain
@@ -29,7 +30,7 @@ public class KrakenPositionSubsystem extends SubsystemBase {
     
     public KrakenPositionSubsystem(int canId) {
         krakenMotor = new TalonFX(canId);
-        positionControl = new PositionVoltage(0).withSlot(0);
+        motionMagicControl = new MotionMagicVoltage(0).withSlot(0);
         
         configureMotor();
     }
@@ -72,7 +73,7 @@ public class KrakenPositionSubsystem extends SubsystemBase {
      * @param rotations Target position in rotations
      */
     public void setPosition(double rotations) {
-        krakenMotor.setControl(positionControl.withPosition(rotations * GEAR_RATIO));
+        krakenMotor.setControl(motionMagicControl.withPosition(rotations * GEAR_RATIO));
     }
     
     /**

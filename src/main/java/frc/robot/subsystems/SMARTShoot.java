@@ -28,8 +28,8 @@ public class SMARTShoot extends SubsystemBase {
     public static class ShootConstants {
 
         // CAN IDs
-        public static final int kFlywheelCanId = 16; // Flywheel — launches fuel
-        public static final int kFeederCanId   = 15; // Feeder   — feeds fuel in
+        public static final int kFlywheelCanId = 16; // Flywheel (16) — launches fuel
+        public static final int kFeederCanId   = 15; // Feeder (15)  — feeds fuel in
 
         // Flywheel velocity PID (Slot 0)
         // Tune kV first — it does most of the work for velocity control
@@ -50,7 +50,7 @@ public class SMARTShoot extends SubsystemBase {
         public static final double kShooterHeightMeters = 0.4826; // 19" shooter exit
         public static final double kWheelRadiusMeters   = 0.0508; // 4" wheel → 2" radius
         public static final double kGearRatio           = 1.0;    // Direct drive
-        public static final double kEfficiency          = 0.7;   // TUNABLE
+        public static final double kEfficiency          = 0.9;   // TUNABLE
                                                                    // Overshoot → lower (0.75)
                                                                    // Undershoot → raise (0.95)
         public static final double kMinRangeMeters = 1.0;
@@ -109,7 +109,7 @@ public class SMARTShoot extends SubsystemBase {
     // ── Feeder ────────────────────────────────────────────────────────────────
 
     public void setFeederRPS(double rps) {
-        feederMotor.setControl(velocityRequest.withVelocity(rps));
+        feederMotor.setControl(velocityRequest.withVelocity(5));
     }
 
     public void stopFeeder() {

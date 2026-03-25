@@ -69,8 +69,8 @@ public class VisionSubsystem extends SubsystemBase {
         // Yaw = 0° means camera faces straight forward
         public static final Transform3d kRobotToCamera = new Transform3d(
             new Translation3d(
-                Units.inchesToMeters(10.75),    // 8" forward of center
-                Units.inchesToMeters(9.4375),   // 8.75" left of center
+                Units.inchesToMeters(10.75),    // 8" forward of center GRACE FOREMAN**** 13.75- DITANCE FORM FRONT EDGES
+                Units.inchesToMeters(9.4375),   // 8.75" left of center  13.75- DITANCE FORM LEFT EDGES
                 Units.inchesToMeters(20.25)    // 19" above floor
             ),
             new Rotation3d(0.0, 10.0, 0.0)    // Camera faces straight forward

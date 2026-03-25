@@ -11,6 +11,7 @@ import java.util.Optional;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -25,6 +26,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
+import frc.robot.commands.AutoIntakeShoot;
+import frc.robot.commands.AutoShoot;
 import frc.robot.commands.SMARTShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.generated.TunerConstants;
@@ -76,9 +79,10 @@ public class RobotContainer {
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final VisionSubsystem visionSubsystem    = new VisionSubsystem(drivetrain);
     private final SMARTShoot           shootSubsystem     = new SMARTShoot();
-    private final Intake intake;
-    private final Shoot shoot;
+    private final Intake intake = new Intake(14);
+    private final Shoot shoot= new Shoot(16, 15);
     private final KrakenPositionSubsystem krakenSubsystem;
+    private final AutoIntakeShoot autoIntakeShoot = new AutoIntakeShoot(shoot,intake);
 
 
 
@@ -110,7 +114,7 @@ public class RobotContainer {
 
     private static final double HOME_POSITION = 0.0;
     private static final double POSITION_1 = -0.5;
-    private static final double POSITION_2 = -2.8;
+    private static final double POSITION_2 = -2.2;
     private static final double POSITION_3 = -2.0;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -118,13 +122,13 @@ public class RobotContainer {
     // ─────────────────────────────────────────────────────────────────────────
     public RobotContainer() {
         krakenSubsystem = new KrakenPositionSubsystem(17);
-        intake = new Intake(14);
-        shoot = new Shoot(/* topMotorCanId= */ 16, /* bottomMotorCanId= */ 15); //FIX THIS IS FOR 2-MOTOR SHOOT; WE HAVE 1a
         configureBindings();
         putDashboard();
          
-
+        m_chooser.addOption("Auto shoot", autoIntakeShoot);
         SmartDashboard.putData("Auto Chooser", m_chooser);
+         
+        CameraServer.startAutomaticCapture();
 
     }
 
@@ -137,9 +141,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             drivetrain.applyRequest(() ->
                 drive
-                    .withVelocityX(-driver.getLeftY() *-driver.getLeftY() *driver.getLeftY() * kMaxSpeed)
-                    .withVelocityY(-driver.getLeftX() *-driver.getLeftX() *driver.getLeftX() * kMaxSpeed)
-                    .withRotationalRate(-driver.getRightX() *-driver.getRightX() *driver.getRightX() * kMaxAngularRate)
+                    .withVelocityX(-driver.getLeftY() *-driver.getLeftY() *-driver.getLeftY() * kMaxSpeed)
+                    .withVelocityY(-driver.getLeftX() *-driver.getLeftX() *-driver.getLeftX() * kMaxSpeed)
+                    .withRotationalRate(-driver.getRightX() *-driver.getRightX() *-driver.getRightX() * kMaxAngularRate)
             )
         );
 
@@ -193,8 +197,8 @@ public class RobotContainer {
         operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,4)  );
         operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
 
-        operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
-        operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
+        operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
+        operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
         // Operator A → climb level 3 (one-button sequence)
         // TODO: Replace this placeholder with your climb sequence commandc
 

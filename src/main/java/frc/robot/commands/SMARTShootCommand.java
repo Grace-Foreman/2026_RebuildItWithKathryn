@@ -73,7 +73,7 @@ public class SMARTShootCommand extends Command {
 
         if (feederEngaged) {
             // Feeder runs at same RPS as flywheel for consistent feed rate
-            smartShoot.setFeederRPS(5.0);
+            smartShoot.setFeederRPS(10);
         }
 
         SmartDashboard.putNumber("Shoot/TargetRPS",  targetRPS);
