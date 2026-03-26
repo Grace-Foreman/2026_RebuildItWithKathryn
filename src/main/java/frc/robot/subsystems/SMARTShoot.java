@@ -45,12 +45,12 @@ public class SMARTShoot extends SubsystemBase {
         public static final double kMinRPS = 10.0;
 
         // ── Physics constants ─────────────────────────────────────────────────
-        public static final double kLaunchAngleDeg      = 40.0;   // TUNABLE
+        public static final double kLaunchAngleDeg      = 38.0;   // TUNABLE
         public static final double kGoalHeightMeters    = 1.8288; // 72" hub opening
         public static final double kShooterHeightMeters = 0.4826; // 19" shooter exit
         public static final double kWheelRadiusMeters   = 0.0508; // 4" wheel → 2" radius
         public static final double kGearRatio           = 1.0;    // Direct drive
-        public static final double kEfficiency          = 0.9;   // TUNABLE
+        public static final double kEfficiency          = 0.5;   // TUNABLE
                                                                    // Overshoot → lower (0.75)
                                                                    // Undershoot → raise (0.95)
         public static final double kMinRangeMeters = 1.0;

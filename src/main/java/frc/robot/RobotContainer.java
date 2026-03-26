@@ -28,6 +28,7 @@ import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
 import frc.robot.commands.AutoIntakeShoot;
 import frc.robot.commands.AutoShoot;
+import frc.robot.commands.DriverCamera;
 import frc.robot.commands.SMARTShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.generated.TunerConstants;
@@ -128,7 +129,8 @@ public class RobotContainer {
         m_chooser.addOption("Auto shoot", autoIntakeShoot);
         SmartDashboard.putData("Auto Chooser", m_chooser);
          
-        CameraServer.startAutomaticCapture();
+        new DriverCamera().schedule();
+
 
     }
 
@@ -194,8 +196,8 @@ public class RobotContainer {
                                                                                                                                                                                                                                                                                                                                                              
         operator.a().whileTrue(new ShootCommand(shoot));
        
-        operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,4)  );
-        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
+        operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,2)  );
+        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-3)  );
 
         operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
         operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
