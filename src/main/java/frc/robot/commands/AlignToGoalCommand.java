@@ -8,6 +8,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -15,9 +16,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.SMARTShoot;
+import frc.robot.subsystems.overkillShoot;
 import frc.robot.subsystems.VisionSubsystem;
-import frc.robot.subsystems.SMARTShoot.ShootConstants;
+import frc.robot.subsystems.overkillShoot.ShootConstants;
 
 /**
  * AlignToGoalCommand — rotates the robot to face the goal and pre-spins
@@ -58,10 +59,12 @@ public class AlignToGoalCommand extends Command {
     private final VisionSubsystem         visionSubsystem;
     //private final Shoot                   shootSubsystem; // NOT in addRequirements — ShootCommand overrides
 
-    private final ProfiledPIDController rotationController = new ProfiledPIDController(
+   // private final PIDController rotationController = new PIDController(kRotD, kMaxAngVel, kMaxAngAccel);
+    
+     private final ProfiledPIDController rotationController = new ProfiledPIDController(
         kRotP, kRotI, kRotD,
         new TrapezoidProfile.Constraints(kMaxAngVel, kMaxAngAccel)
-    );
+     );
 
     // CTRE swerve request — field-centric drive with PID-controlled rotation
     private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric()
@@ -94,94 +97,50 @@ public class AlignToGoalCommand extends Command {
     }
 
     @Override
-    public void execute() {
-        boolean isBlue = visionSubsystem.isBlue();
+public void execute() {
+    boolean isBlue = visionSubsystem.isBlue();
 
-        // ── 1. Get goal target pose ───────────────────────────────────────────
-        Pose2d goalPose  = visionSubsystem.getClosestGoalTarget(isBlue);
-        Pose2d robotPose = drivetrain.getState().Pose;
+    // ── 1. Get goal target pose ───────────────────────────────────────────
+    Pose2d goalPose  = visionSubsystem.getClosestGoalTarget(isBlue);
+    Pose2d robotPose = drivetrain.getState().Pose;
 
-        // ── 2. Calculate angle from robot to goal ─────────────────────────────
-        double dx = goalPose.getX() - robotPose.getX();
-        double dy = goalPose.getY() - robotPose.getY();
-        double targetAngle = Math.atan2(dy, dx);
+    // ── 2. Calculate angle from robot to goal ─────────────────────────────
+    double dx = goalPose.getX() - robotPose.getX();
+    double dy = goalPose.getY() - robotPose.getY();
+    double targetAngle = Math.atan2(dy, dx);
 
-        targetAngle += kShooterOffset;
-        // Normalize to [0, 2π] to match continuous input range
-        if (targetAngle < 0) targetAngle += 2.0 * Math.PI;
+    // FIX 1: DO NOT normalize to [0, 2π] — keep in [-π, π] to match
+    // enableContinuousInput(-PI, PI). The offset is small enough not to matter.
+    targetAngle += kShooterOffset;
+    // Clamp back into [-π, π] after offset just in case
+    targetAngle = MathUtil.angleModulus(targetAngle);
 
-        // ── 3. PID: calculate rotation output ─────────────────────────────────
-        rotationController.setGoal(targetAngle);
-        double currentAngle = robotPose.getRotation().getRadians();
+    // ── 3. PID: calculate rotation output ─────────────────────────────────
+    rotationController.setGoal(targetAngle);
+    double currentAngle = robotPose.getRotation().getRadians();
 
-        double angleError = targetAngle - currentAngle;
-        
-        if (angleError > Math.PI){angleError -= 2.0*Math.PI;}
-        if (angleError < -Math.PI){angleError += 2.0*Math.PI;}
+    // FIX 2: Let the ProfiledPIDController handle tolerance — do NOT manually
+    // zero the output. Bypassing it desynchronizes the internal motion profile
+    // and causes the drift hop when you re-enter the active zone.
+    double rotOutput = rotationController.calculate(currentAngle);
 
-        boolean inTolerance = Math.abs(angleError) <= kRotTolerance;
-        //if (currentAngle < 0) currentAngle += 2.0 * Math.PI;
+    // Optional: small deadband to prevent buzzing at steady state
+    if (Math.abs(rotOutput) < 0.01) rotOutput = 0.0;
 
-        double rotOutput = inTolerance
-        ? 0.0 : rotationController.calculate(currentAngle);
+    // ── 4. Apply drive command ────────────────────────────────────────────
+    drivetrain.setControl(
+        driveRequest
+            .withVelocityX(0.0)
+            .withVelocityY(0.0)
+            .withRotationalRate(rotOutput)
+    );
 
-        // ── 4. Apply drive command — robot stays in place, only rotates ───────
-        drivetrain.setControl(
-            driveRequest
-                .withVelocityX(0.0)
-                .withVelocityY(0.0)
-                .withRotationalRate(rotOutput)
-        );
-    SmartDashboard.putString("AlignGoal/Status", 
-            inTolerance ? "Aligned" : "Rotating");
-    }
-/* 
-        // ── 5. Physics-based flywheel speed ───────────────────────────────────
-        double distanceMeters = Math.sqrt(dx * dx + dy * dy);
-        boolean inRange = distanceMeters >= ShootConstants.kMinRangeMeters
-                       && distanceMeters <= ShootConstants.kMaxRangeMeters;
-
-        //boolean shootCommandActive = edu.wpi.first.wpilibj2.command.CommandScheduler
-            //.getInstance()
-            //.requiring(shootSubsystem) != null;
-
-        //if (!shootCommandActive){
-            if (inRange) {
-                //double targetRPS = shootSubsystem.calculateMotorRPS(distanceMeters);
-                //shootSubsystem.setFlywheelRPS(targetRPS);
-
-                // ── 6. Elastic / SmartDashboard status ───────────────────────────
-                boolean aligned  = rotationController.atGoal();
-                //boolean atSpeed  = shootSubsystem.isUpToSpeed(targetRPS, kSpeedTolerance);
-
-                //SmartDashboard.putNumber("AlignGoal/TargetRPS",     targetRPS);
-                //SmartDashboard.putNumber("AlignGoal/CurrentRPS",    shootSubsystem.getFlywheelRPS());
-                SmartDashboard.putNumber("AlignGoal/DistanceM",     distanceMeters);
-                SmartDashboard.putBoolean("AlignGoal/Aligned",      aligned);
-                //SmartDashboard.putBoolean("AlignGoal/AtSpeed",      atSpeed);
-
-                if (aligned && atSpeed) {
-                    SmartDashboard.putString("AlignGoal/Status", "READY TO FIRE!");
-                } else if (!aligned) {
-                    SmartDashboard.putString("AlignGoal/Status", "Rotating...");
-                } else {
-                    SmartDashboard.putString("AlignGoal/Status", "Spinning up...");
-                }
-            } else {
-                // Out of range — don't spin, warn operator
-                shootSubsystem.coastTopShoot();
-                String warning = distanceMeters < ShootConstants.kMinRangeMeters
-                    ? "TOO CLOSE"
-                    : "TOO FAR";
-                SmartDashboard.putString("AlignGoal/Status", warning);
-            }
-        } else{
-            // ShootCommand is active — just update rotation status, don't touch flywheel
-            SmartDashboard.putString("AlignGoal/Status",
-            rotationController.atGoal() ? "Aligned (Shooting...)" : "Rotating...");
-        }
-    }
-*/
+    boolean aligned = rotationController.atGoal();
+    SmartDashboard.putString("AlignGoal/Status", aligned ? "Aligned" : "Rotating");
+    SmartDashboard.putNumber("AlignGoal/TargetAngleDeg", Math.toDegrees(targetAngle));
+    SmartDashboard.putNumber("AlignGoal/CurrentAngleDeg", Math.toDegrees(currentAngle));
+    SmartDashboard.putNumber("AlignGoal/RotOutput", rotOutput);
+}
     @Override
     public void end(boolean interrupted) {
      

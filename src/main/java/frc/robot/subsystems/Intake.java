@@ -58,9 +58,9 @@ public class Intake extends SubsystemBase {
         
         // Configure current limits (optional but recommended)
         config.CurrentLimits.SupplyCurrentLimit = 40.0;
-        config.CurrentLimits.SupplyCurrentLimit = 60.0;
+        config.CurrentLimits.StatorCurrentLimit = 60.0;
        // config.CurrentLimits.SupplyTimeLimit = 0.1;
-        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+        // config.CurrentLimits.SupplyCurrentLimitEnable = true;
         
         // Apply configuration
         krakenMotor.getConfigurator().apply(config);

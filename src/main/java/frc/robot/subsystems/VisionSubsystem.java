@@ -62,7 +62,7 @@ public class VisionSubsystem extends SubsystemBase {
     public static class VisionConstants {
 
         // Camera name — must match exactly what's configured in PhotonVision UI
-        public static final String kCameraName = "AprilTag_Camera";
+        public static final String kCameraName = "NewAprilTag_Camera";
 
         // Camera physical position relative to robot center (robot-centric frame)
         // +X = forward, +Y = left of center, +Z = up
@@ -73,13 +73,13 @@ public class VisionSubsystem extends SubsystemBase {
                 Units.inchesToMeters(9.75),   // 8.75" left of center  13.75- DITANCE FORM LEFT EDGES
                 Units.inchesToMeters(20.95)    // 19" above floor
             ),
-            new Rotation3d(0.0, 20.0, 0.0)    // Camera faces straight forward
+            new Rotation3d(0.0, 20.0, 90.0)    // Camera faces straight forward
         );
 
         // How much to trust vision measurements when updating pose estimator
         // Lower values = more trust. Multi-tag is more reliable than single-tag.
-        public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(0.9, 0.9, 1.5);
-        public static final Matrix<N3, N1> kMultiTagStdDevs  = VecBuilder.fill(0.3, 0.3, 0.9);
+        public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(0.9, 0.9, 999999999);
+        public static final Matrix<N3, N1> kMultiTagStdDevs  = VecBuilder.fill(0.3, 0.3, 999999999);
 
         // Reject single-tag poses with ambiguity above this threshold
         // (0.2 is a good starting point; lower = stricter)

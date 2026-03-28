@@ -6,10 +6,13 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -29,17 +32,22 @@ import frc.robot.commands.AlignToTowerCommand;
 import frc.robot.commands.AutoIntakeShoot;
 import frc.robot.commands.AutoShoot;
 import frc.robot.commands.DriverCamera;
-import frc.robot.commands.SMARTShootCommand;
+//import frc.robot.commands.overkillShootCommand;
 import frc.robot.commands.ShootCommand;
+import frc.robot.commands.SmartShootCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.SMARTShoot;
+import frc.robot.subsystems.overkillShoot;
 import frc.robot.subsystems.Shoot;
+import frc.robot.subsystems.SmartShoot;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.Telemetry;
 import frc.robot.subsystems.KrakenPositionSubsystem;
 import frc.robot.commands.SetPositionCommand;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 
 
 /**
@@ -79,22 +87,25 @@ public class RobotContainer {
     // ─────────────────────────────────────────────────────────────────────────
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final VisionSubsystem visionSubsystem    = new VisionSubsystem(drivetrain);
-    private final SMARTShoot           shootSubsystem     = new SMARTShoot();
+    //private final overkillShoot           shootSubsystem     = new overkillShoot();
+    private final SmartShoot smartShoot = new SmartShoot();
     private final Intake intake = new Intake(14);
-    private final Shoot shoot= new Shoot(16, 15);
+    private final Shoot shoot = new Shoot(16, 15);
     private final KrakenPositionSubsystem krakenSubsystem;
-    private final AutoIntakeShoot autoIntakeShoot = new AutoIntakeShoot(shoot,intake);
-
-
+    public static Map<String, Command> autoCommands = new HashMap<>();
+    
+   // private final AutoIntakeShoot autoIntakeShoot = new AutoIntakeShoot(shoot,intake);
+//
 
     // ─────────────────────────────────────────────────────────────────────────
     // Controllers
-    // ─────────────────────────────────────────────────────────────────────────
+    // ──────────────────────   ───────────────────────────────────────────────────
     private final CommandXboxController driver   = new CommandXboxController(0);
     private final CommandXboxController operator = new CommandXboxController(1);
 
       // A chooser for autonomous commands
-    SendableChooser<Command> m_chooser = new SendableChooser<>();
+    SendableChooser<Command> m_chooser;
+    // AutoBuilder m_ABuilder = new AutoBuilder();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Swerve drive settings (from CTRE Tuner X generated template)
@@ -104,7 +115,7 @@ public class RobotContainer {
 
     // Slew-rate limited joystick inputs for smoother driving
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-        .withDeadband(kMaxSpeed * 0.1)
+        .withDeadband(kMaxSpeed * 0.025)
         .withRotationalDeadband(kMaxAngularRate * 0.1)
         .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -115,7 +126,7 @@ public class RobotContainer {
 
     private static final double HOME_POSITION = 0.0;
     private static final double POSITION_1 = -0.5;
-    private static final double POSITION_2 = -2.2;
+    private static final double POSITION_2 = -2.5;
     private static final double POSITION_3 = -2.0;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -123,12 +134,18 @@ public class RobotContainer {
     // ─────────────────────────────────────────────────────────────────────────
     public RobotContainer() {
         krakenSubsystem = new KrakenPositionSubsystem(17);
+        
         configureBindings();
         putDashboard();
-         
-        m_chooser.addOption("Auto shoot", autoIntakeShoot);
+        
+        autoCommands.put("AutoIntakeShoot", new AutoIntakeShoot(shoot, intake));
+        NamedCommands.registerCommands(autoCommands);
+       // NamedCommands.registerCommand("BackUpAndShoot" , new BackUpAndShoot());
+        m_chooser = AutoBuilder.buildAutoChooser();
         SmartDashboard.putData("Auto Chooser", m_chooser);
+        m_chooser.addOption("backup and shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
          
+
         new DriverCamera().schedule();
 
 
@@ -170,6 +187,8 @@ public class RobotContainer {
             drivetrain.resetPose(new Pose2d(currentPos, resetAngle));
         }).ignoringDisable(true).withName("Zero Gyro"));
 
+        driver.x().onTrue(Commands.runOnce(drivetrain::seedFieldCentric));
+
         // Driver SysId bindings (for initial characterization runs)
         // Back + Y/X = dynamic | Start + Y/X = quasistatic
         // These are inherited from the CTRE Tuner X generated template.
@@ -183,7 +202,7 @@ public class RobotContainer {
         );
 
         // Operator LT → align to tower (drive to tower + hold side-specific heading)
-        // Automatically detects left/right side of tower.
+        // Automatically detects left/right sside of tower.
         // Rejects if robot is >2m away (tunable in VisionConstants.kMaxTowerAlignDistance).
         driver.rightBumper().whileTrue(
             new AlignToTowerCommand(drivetrain, visionSubsystem)
@@ -191,7 +210,7 @@ public class RobotContainer {
 
         // Operator RB → fire shooter (flywheel + feeder once up to speed)
         operator.b().whileTrue(
-            new SMARTShootCommand(visionSubsystem, shootSubsystem, drivetrain)
+            new SmartShootCommand(visionSubsystem, smartShoot, drivetrain)
         );
                                                                                                                                                                                                                                                                                                                                                              
         operator.a().whileTrue(new ShootCommand(shoot));
@@ -236,6 +255,8 @@ public class RobotContainer {
        // return m_chooser.getSelected();
        // TODO: Add autonomous routines using PathPlanner or command sequences
        // return Commands.none();
-         return m_chooser.getSelected();
+    //    return new PathPlannerAuto("BackUpAndShoot");
+        return m_chooser.getSelected();
+        //  return m_chooser.getSelected();
     }
 }
