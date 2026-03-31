@@ -5,9 +5,22 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "race",
           "data": {
-            "pathName": "left diagonal"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "left diagonal"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 0.8
+                }
+              }
+            ]
           }
         },
         {

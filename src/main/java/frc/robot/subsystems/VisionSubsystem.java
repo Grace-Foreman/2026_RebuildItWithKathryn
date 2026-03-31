@@ -205,6 +205,9 @@ public class VisionSubsystem extends SubsystemBase {
      * Mirrors 3940's updateCamera() structure — called once per periodic().
      */
     private void updateCamera() {
+
+        if (DriverStation.isAutonomous()) return;// potential fix to the auto vision issue
+
         final List<PhotonPipelineResult> results = camera.getAllUnreadResults();
         if (results.isEmpty()) return;
 

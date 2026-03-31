@@ -31,7 +31,6 @@ import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
 import frc.robot.commands.AutoIntakeShoot;
 import frc.robot.commands.AutoShoot;
-import frc.robot.commands.DriverCamera;
 //import frc.robot.commands.overkillShootCommand;
 import frc.robot.commands.ShootCommand;
 import frc.robot.commands.SmartShootCommand;
@@ -47,6 +46,7 @@ import frc.robot.subsystems.KrakenPositionSubsystem;
 import frc.robot.commands.SetPositionCommand;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import edu.wpi.first.cameraserver.*;
 
 
 
@@ -145,9 +145,7 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Chooser", m_chooser);
         m_chooser.addOption("backup and shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
          
-
-        new DriverCamera().schedule();
-
+        CameraServer.startAutomaticCapture();
 
     }
 
@@ -242,7 +240,7 @@ public class RobotContainer {
             drivetrain.resetPose(new Pose2d(currentPos, resetAngle));
         }).ignoringDisable(true));
 
-        // Vision status
+        // Vision statu
         SmartDashboard.putString("AlignGoal/Status",  "—");
         SmartDashboard.putString("AlignTower/Status", "—");
         SmartDashboard.putBoolean("AlignTower/Aligned", false);
