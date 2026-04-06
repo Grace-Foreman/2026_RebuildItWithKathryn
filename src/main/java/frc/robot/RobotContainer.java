@@ -44,6 +44,7 @@ import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.Telemetry;
 import frc.robot.subsystems.KrakenPositionSubsystem;
 import frc.robot.commands.SetPositionCommand;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.cameraserver.*;
@@ -129,11 +130,14 @@ public class RobotContainer {
     private static final double POSITION_2 = -2.5;
     private static final double POSITION_3 = -2.0;
 
+    
     // ─────────────────────────────────────────────────────────────────────────
     // Constructor
     // ─────────────────────────────────────────────────────────────────────────
     public RobotContainer() {
         krakenSubsystem = new KrakenPositionSubsystem(17);
+
+        
         
         configureBindings();
         putDashboard();
@@ -145,12 +149,13 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Chooser", m_chooser);
         m_chooser.addOption("backup and shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
          
-        CameraServer.startAutomaticCapture();
+        //CameraServer.startAutomaticCapture();
 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Bindings
+    
     // ─────────────────────────────────────────────────────────────────────────
     private void configureBindings() {
 
@@ -214,7 +219,7 @@ public class RobotContainer {
         operator.a().whileTrue(new ShootCommand(shoot));
        
         operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,2)  );
-        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-3)  );
+        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
 
         operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
         operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
