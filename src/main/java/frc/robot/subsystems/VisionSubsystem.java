@@ -206,7 +206,7 @@ public class VisionSubsystem extends SubsystemBase {
      */
     private void updateCamera() {
 
-        if (DriverStation.isAutonomous()) return;// potential fix to the auto vision issue
+      //  if (DriverStation.isAutonomous()) return;// potential fix to the auto vision issue
 
         final List<PhotonPipelineResult> results = camera.getAllUnreadResults();
         if (results.isEmpty()) return;

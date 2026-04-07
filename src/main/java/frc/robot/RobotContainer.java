@@ -27,7 +27,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
-import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
 import frc.robot.commands.AutoIntakeShoot;
 import frc.robot.commands.AutoShoot;
@@ -37,7 +36,6 @@ import frc.robot.commands.SmartShootCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.overkillShoot;
 import frc.robot.subsystems.Shoot;
 import frc.robot.subsystems.SmartShoot;
 import frc.robot.subsystems.VisionSubsystem;
@@ -48,6 +46,7 @@ import frc.robot.commands.SetPositionCommand;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.cameraserver.*;
+
 
 
 
@@ -82,7 +81,7 @@ import edu.wpi.first.cameraserver.*;
  *  [ ] Tune vision std devs, PID gains, and kTowerBumperDistance on robot
  */
 public class RobotContainer {
-
+ private static final double JOYSTICK_DEADBAND = 0.1;
     // ─────────────────────────────────────────────────────────────────────────
     // Subsystems
     // ─────────────────────────────────────────────────────────────────────────
@@ -106,7 +105,6 @@ public class RobotContainer {
 
       // A chooser for autonomous commands
     SendableChooser<Command> m_chooser;
-    // AutoBuilder m_ABuilder = new AutoBuilder();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Swerve drive settings (from CTRE Tuner X generated template)
@@ -141,11 +139,11 @@ public class RobotContainer {
         
         configureBindings();
         putDashboard();
-        
+
         autoCommands.put("AutoIntakeShoot", new AutoIntakeShoot(shoot, intake));
         NamedCommands.registerCommands(autoCommands);
        // NamedCommands.registerCommand("BackUpAndShoot" , new BackUpAndShoot());
-        m_chooser = AutoBuilder.buildAutoChooser();
+        m_chooser = AutoBuilder.buildAutoChooser("Autos");
         SmartDashboard.putData("Auto Chooser", m_chooser);
         m_chooser.addOption("backup and shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
          
@@ -200,9 +198,7 @@ public class RobotContainer {
 
         // Operator LB → align to goal (rotate robot + pre-spin flywheel)
         // NOTE: Move to driver.leftBumper() if drivers prefer to control this
-        driver.leftBumper().whileTrue(
-            new AlignToGoalCommand(drivetrain, visionSubsystem/* , shootSubsystem*/)
-        );
+       
 
         // Operator LT → align to tower (drive to tower + hold side-specific heading)
         // Automatically detects left/right sside of tower.
@@ -250,7 +246,10 @@ public class RobotContainer {
         SmartDashboard.putString("AlignTower/Status", "—");
         SmartDashboard.putBoolean("AlignTower/Aligned", false);
     }
-
+  private double applyDeadband(double value) {
+        if (Math.abs(value) < JOYSTICK_DEADBAND) return 0.0;
+        return (value - Math.signum(value) * JOYSTICK_DEADBAND) / (1.0 - JOYSTICK_DEADBAND);
+    }
     // ─────────────────────────────────────────────────────────────────────────
     // Auto
     // ─────────────────────────────────────────────────────────────────────────
