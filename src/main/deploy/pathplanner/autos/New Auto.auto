@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Back Up"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "AutoIntakeShoot"
+            "pathName": "Over Depot"
           }
         }
       ]

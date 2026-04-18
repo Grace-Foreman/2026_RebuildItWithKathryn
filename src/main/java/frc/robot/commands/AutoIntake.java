@@ -24,7 +24,7 @@ public class AutoIntake extends Command {
   @Override
   public void initialize() {
 
-     intakeSubsystem.setVoltage(-5.0);
+     intakeSubsystem.setVoltage(-6.0);
         shootTimer.reset();
         shootTimer.start(); 
   }
@@ -42,6 +42,6 @@ public class AutoIntake extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return shootTimer.hasElapsed(3);
+    return shootTimer.hasElapsed(5);
   }
 }

@@ -76,7 +76,7 @@ public class SmartShootCommand extends Command {
 
         if (feederEngaged) {
             // Feeder runs at same RPS as flywheel
-            smartShoot.setFeederRPS(targetRPS);
+            smartShoot.setFeederRPS(20/*targetRPS*/);
         }
 
         // ── 5. Dashboard — use to verify zone boundaries and PID tracking ──────

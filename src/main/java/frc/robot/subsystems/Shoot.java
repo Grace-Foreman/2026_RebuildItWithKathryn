@@ -32,7 +32,7 @@ public class Shoot extends SubsystemBase {
     
     // Motion constraints
     private static final double MAX_VELOCITY = 85.0;      // rotations per second
-    private static final double MAX_ACCELERATION = 170.; // rotations per second^2
+    private static final double MAX_ACCELERATION = 850.0; // rotations per second^2
     private static final double MAX_JERK = 200.0;        // rotations per second^3
     
     // Gear ratio: motor rotations per mechanism rotation

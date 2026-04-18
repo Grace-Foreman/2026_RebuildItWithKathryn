@@ -69,10 +69,10 @@ public class SmartShoot extends SubsystemBase {
         // Zone 1 is closest → needs most power (steeper arc).
         // Zone %4 is farthest → needs most power too (more distance).
         // Start all at 30 and adjust from there.
-        public static final double kZone1RPS = 37; // At 1.5 m — TUNABLE
-        public static final double kZone2RPS = 53; // At 3.0 m — TUNABLE
-        public static final double kZone3RPS = 65; // At 4.5 m — TUNABLE
-        public static final double kZone4RPS = 79; // At 6.0 m — TUNABLE
+        public static final double kZone1RPS = 40; // At 1.5 m — TUNABLE
+        public static final double kZone2RPS = 57; // At 3.0 m — TUNABLE
+        public static final double kZone3RPS = 70; // At 4.5 m — TUNABLE
+        public static final double kZone4RPS = 84; // At 6.0 m — TUNABLE
 
         // ── Safety clamp ──────────────────────────────────────────────────────
         public static final double kMaxRPS = 80.0;

@@ -26,9 +26,14 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
+import frc.robot.commands.AcrossFieldShooting;
+import frc.robot.commands.AlignToGoalCommand;
 import frc.robot.commands.AlignToTowerCommand;
+import frc.robot.commands.AutoCrossFieldShoot;
+import frc.robot.commands.AutoIntake;
 import frc.robot.commands.AutoIntakeShoot;
+import frc.robot.commands.ShootForPickUp;
+
 import frc.robot.commands.AutoShoot;
 //import frc.robot.commands.overkillShootCommand;
 import frc.robot.commands.ShootCommand;
@@ -41,6 +46,7 @@ import frc.robot.subsystems.SmartShoot;
 import frc.robot.subsystems.VisionSubsystem;
 import frc.robot.Telemetry;
 import frc.robot.subsystems.KrakenPositionSubsystem;
+import frc.robot.subsystems.MatchTimerSubsystem;
 import frc.robot.commands.SetPositionCommand;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -91,6 +97,8 @@ public class RobotContainer {
     private final SmartShoot smartShoot = new SmartShoot();
     private final Intake intake = new Intake(14);
     private final Shoot shoot = new Shoot(16, 15);
+    private final AcrossFieldShooting shootAcross = new AcrossFieldShooting(shoot);
+
     private final KrakenPositionSubsystem krakenSubsystem;
     public static Map<String, Command> autoCommands = new HashMap<>();
     
@@ -102,6 +110,8 @@ public class RobotContainer {
     // ──────────────────────   ───────────────────────────────────────────────────
     private final CommandXboxController driver   = new CommandXboxController(0);
     private final CommandXboxController operator = new CommandXboxController(1);
+
+    private final MatchTimerSubsystem m_matchTimer = new MatchTimerSubsystem();
 
       // A chooser for autonomous commands
     SendableChooser<Command> m_chooser;
@@ -141,11 +151,25 @@ public class RobotContainer {
         putDashboard();
 
         autoCommands.put("AutoIntakeShoot", new AutoIntakeShoot(shoot, intake));
+        autoCommands.put("AutoIntake", new AutoIntake(intake));
+        autoCommands.put("PickUpForShoot", new ShootForPickUp(shoot, intake));
+        autoCommands.put("AutoCrossFieldShooting", new AutoCrossFieldShoot(shoot, intake));
+
+
+
         NamedCommands.registerCommands(autoCommands);
        // NamedCommands.registerCommand("BackUpAndShoot" , new BackUpAndShoot());
         m_chooser = AutoBuilder.buildAutoChooser("Autos");
         SmartDashboard.putData("Auto Chooser", m_chooser);
         m_chooser.addOption("backup and shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
+        m_chooser.addOption("diagonal shoot", AutoBuilder.buildAuto("BackUpAndShoot"));
+        m_chooser.addOption("backup and shoot and intake", AutoBuilder.buildAuto("Diagonalshoot"));
+        m_chooser.addOption("Trench Center Line", AutoBuilder.buildAuto("TrenchCenterLine"));
+        m_chooser.addOption("Across Field Shooting", AutoBuilder.buildAuto("Across Field Shooting"));
+        m_chooser.addOption("New Auto", AutoBuilder.buildAuto("New Auto"));
+
+
+
          
         //CameraServer.startAutomaticCapture();
 
@@ -204,7 +228,7 @@ public class RobotContainer {
         // Automatically detects left/right sside of tower.
         // Rejects if robot is >2m away (tunable in VisionConstants.kMaxTowerAlignDistance).
         driver.rightBumper().whileTrue(
-            new AlignToTowerCommand(drivetrain, visionSubsystem)
+            new AlignToGoalCommand(drivetrain, visionSubsystem)
         );
 
         // Operator RB → fire shooter (flywheel + feeder once up to speed)
@@ -213,9 +237,11 @@ public class RobotContainer {
         );
                                                                                                                                                                                                                                                                                                                                                              
         operator.a().whileTrue(new ShootCommand(shoot));
+
+         operator.rightBumper().whileTrue(new AcrossFieldShooting(shoot));
        
-        operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,2)  );
-        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-4)  );
+        operator.y().whileTrue( new frc.robot.commands.IntakeCommand(intake,6)  );
+        operator.x().whileTrue( new frc.robot.commands.IntakeCommand(intake,-6)  );
 
         operator.povUp().onTrue(new SetPositionCommand(krakenSubsystem, POSITION_2));
         operator.povDown().onTrue(new SetPositionCommand(krakenSubsystem, HOME_POSITION));
@@ -245,10 +271,6 @@ public class RobotContainer {
         SmartDashboard.putString("AlignGoal/Status",  "—");
         SmartDashboard.putString("AlignTower/Status", "—");
         SmartDashboard.putBoolean("AlignTower/Aligned", false);
-    }
-  private double applyDeadband(double value) {
-        if (Math.abs(value) < JOYSTICK_DEADBAND) return 0.0;
-        return (value - Math.signum(value) * JOYSTICK_DEADBAND) / (1.0 - JOYSTICK_DEADBAND);
     }
     // ─────────────────────────────────────────────────────────────────────────
     // Auto

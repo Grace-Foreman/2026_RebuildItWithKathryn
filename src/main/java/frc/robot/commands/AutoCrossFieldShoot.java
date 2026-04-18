@@ -10,7 +10,7 @@ import frc.robot.subsystems.Shoot;
 import edu.wpi.first.wpilibj.Timer;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
-public class AutoShoot extends Command {
+public class AutoCrossFieldShoot extends Command {
   
     private final Shoot shootSubsystem;
      private final Intake intakeSubsystem;
@@ -21,10 +21,10 @@ public class AutoShoot extends Command {
     // Tunable constants - adjust these to match your robot
     private static final double TOP_MOTOR_VOLTAGE    = 5.5;  // Volts to run top motor
     private static final double BOTTOM_MOTOR_VOLTAGE = 8;  // Volts to run bottom motor
-    private static final double TARGET_VELOCITY_RPS  = 20.0; // Target speed in rotations/sec
+    private static final double TARGET_VELOCITY_RPS  = 40.0; // Target speed in rotations/sec
     private static final double TOLERANCE_RPS        = 2.0;  // Acceptable speed tolerance
 
-    public AutoShoot(Shoot shootSubsystem, Intake intakeSubsystem) {
+    public AutoCrossFieldShoot(Shoot shootSubsystem, Intake intakeSubsystem) {
         this.shootSubsystem = shootSubsystem;
          this.intakeSubsystem = intakeSubsystem;
        

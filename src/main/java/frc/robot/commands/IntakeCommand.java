@@ -8,6 +8,7 @@ public class IntakeCommand extends Command {
     private final double tolerance;
     private final double voltage;
     
+
     /**
      * Command to move the Kraken motor to a specific position
      * @param subsystem The RunSubsystem to use
@@ -42,7 +43,8 @@ public class IntakeCommand extends Command {
     
     @Override
     public boolean isFinished() {
-        return false;
+        return subsystem.isStalling(); // automatically stops the command if stalling
+
     }
     
     @Override

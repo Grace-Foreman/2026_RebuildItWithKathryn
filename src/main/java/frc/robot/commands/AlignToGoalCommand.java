@@ -40,7 +40,7 @@ public class AlignToGoalCommand extends Command {
 
     // ── Tunable constants ─────────────────────────────────────────────────────
     // Rotation PID — tune kP first, then add kD if oscillating
-    private static final double kRotP = 0.5;  //0.8 // Matches 3940's kAimP
+    private static final double kRotP = 0.05;  //0.8 // Matches 3940's kAimP
     private static final double kRotI = 0.0;
     private static final double kRotD = 0.1;
     // Max angular velocity and acceleration for the profile
@@ -155,6 +155,7 @@ public void execute() {
 
     @Override
     public boolean isFinished() {
+        
         return false; // Runs until LB is released
     }
 }

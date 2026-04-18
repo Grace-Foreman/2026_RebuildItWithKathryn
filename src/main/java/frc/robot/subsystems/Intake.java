@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -7,12 +8,36 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
+
     private final TalonFX krakenMotor;
     private final VelocityVoltage velocityVoltage;
+   
+   private final TalonFX intakeMotor = new TalonFX(15, "rio");
+       // Use the correct Phoenix 6 unit types instead of <Double>
+    private final StatusSignal<Current>  currentSignal   = intakeMotor.getStatorCurrent();
+    private final StatusSignal<AngularVelocity> velocitySignal  = intakeMotor.getVelocity();
+    private final StatusSignal<Double>   dutyCycleSignal = intakeMotor.getDutyCycle(); // duty cycle stays as Double
+
+    private static final double STALL_CURRENT_AMPS = 40.0;
+    private static final double STALL_VELOCITY_RPS = 1.0;
+    private static final double STALL_MIN_OUTPUT   = 0.1;
+
+    public boolean isStalling() {
+        double current   = currentSignal.getValueAsDouble();
+        double velocity  = Math.abs(velocitySignal.getValueAsDouble());
+        double dutyCycle = Math.abs(dutyCycleSignal.getValueAsDouble());
+
+        return dutyCycle > STALL_MIN_OUTPUT
+            && current   > STALL_CURRENT_AMPS
+            && velocity  < STALL_VELOCITY_RPS;
+    }
     
     // PID Constants - tune these for your mechanism
     private static final double kP = 6.0;  // Proportional gain
@@ -28,6 +53,8 @@ public class Intake extends SubsystemBase {
     
     // Gear ratio: motor rotations per mechanism rotation
     private static final double GEAR_RATIO = 15.34;
+    
+
     
     public Intake(int canId) {
         krakenMotor = new TalonFX(canId);
@@ -79,10 +106,17 @@ public class Intake extends SubsystemBase {
      */
     public void stop() {
         krakenMotor.stopMotor();
+        
     }    
+    
     @Override
     public void periodic() {
         // This method will be called once per scheduler run
         // You can add telemetry here
+        StatusSignal.refreshAll(currentSignal, velocitySignal, dutyCycleSignal);
+
+        SmartDashboard.putBoolean("Intake Stalling", isStalling());
+        SmartDashboard.putNumber("Intake Current", currentSignal.getValueAsDouble());
+        SmartDashboard.putNumber("Intake Velocity", velocitySignal.getValueAsDouble());
     }
 }
