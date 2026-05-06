@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Back Up"
+            "pathName": "Back up"
           }
         },
         {
@@ -17,22 +17,9 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "AutoIntake"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "To depot"
-                }
-              }
-            ]
+            "pathName": "To depot"
           }
         },
         {
@@ -52,6 +39,12 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 5.0
           }
         },
         {
